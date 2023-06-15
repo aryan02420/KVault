@@ -9,7 +9,7 @@ import {
   CreateTextSecretOutputType,
   FetchTextSecretInputType,
   TextSecretPayloadType,
-} from "./schema.ts";
+} from "../shared/schema.ts";
 
 export async function createTextSecret(
   input: CreateTextSecretInputType,

@@ -14,7 +14,7 @@ import {
   CreateTextSecretInputType,
   fetchTextSecretInputSchema,
   FetchTextSecretInputType,
-} from "./schema.ts";
+} from "../shared/schema.ts";
 import { z, ZodSchema } from "zod";
 import { createTextSecret, stats } from "./controller.ts";
 
@@ -128,7 +128,7 @@ app.use(router.routes(), router.allowedMethods());
 
 // static file serving
 app.use(async (ctx, next) => {
-  const root = `${Deno.cwd()}/public`;
+  const root = `${Deno.cwd()}/client/dist/`;
   try {
     await ctx.send({
       root,

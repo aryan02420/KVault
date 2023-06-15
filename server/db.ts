@@ -1,4 +1,4 @@
-import { TextSecretPayloadType, FetchTextSecretInputType } from "./schema.ts";
+import { TextSecretPayloadType, FetchTextSecretInputType } from "../shared/schema.ts";
 
 export const kv = await Deno.openKv();
 

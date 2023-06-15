@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "start": "deno run -A --watch --unstable main.ts"
+    "start": "deno run -A --watch --unstable server/main.ts"
   },
   "importMap": "./import_map.json"
 }
