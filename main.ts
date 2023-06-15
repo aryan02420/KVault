@@ -1,4 +1,4 @@
-import { Application, Context, helpers, Middleware, Router } from "oak";
+import { Application, Context, helpers, Middleware, Router, Status } from "oak";
 import {
   deleteUserById,
   getAddressByUserId,
@@ -19,9 +19,17 @@ import { z, ZodSchema } from "zod";
 import { createTextSecret, stats } from "./controller.ts";
 
 const { getQuery } = helpers;
-const staticRouter = new Router();
 const apiRouter = new Router();
 const demoRouter = new Router();
+const router = new Router();
+
+const logErrors: Middleware = async (_, next) => {
+  try {
+    await next();
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 const json: Middleware = async (ctx, next) => {
   const body = ctx.request.body();
@@ -39,18 +47,13 @@ const validateState =
     const result = schema.safeParse(ctx.state);
     if (!result.success) {
       ctx.response.type = "application/json";
-      ctx.response.status = 400;
+      ctx.response.status = Status.BadRequest;
       ctx.response.body = result.error.message;
       return;
     }
     ctx.state = ctx.state as z.infer<TSchema>;
     await next();
   };
-
-staticRouter
-  .get("/", (ctx: Context) => {
-    ctx.response.body = "Hello world!";
-  });
 
 apiRouter
   .use(json)
@@ -61,7 +64,7 @@ apiRouter
       const state = ctx.state;
       const output = await createTextSecret(state);
       if (!output.id) {
-        ctx.throw(500, "Error creating text secret.");
+        ctx.throw(Status.InternalServerError, "Error creating text secret.");
       }
       ctx.response.body = output;
     },
@@ -73,7 +76,7 @@ apiRouter
       const state = ctx.state;
       const result = await readTextSecret(state);
       if (!result) {
-        ctx.throw(404, "Secret not found or already read.");
+        ctx.throw(Status.NotFound, "Secret not found or already read.");
       }
       ctx.response.body = result;
     },
@@ -117,8 +120,30 @@ demoRouter
 
 const app = new Application();
 
-app.use(staticRouter.routes(), staticRouter.allowedMethods());
-app.use(apiRouter.routes(), apiRouter.allowedMethods());
-app.use(demoRouter.routes(), demoRouter.allowedMethods());
+app.use(logErrors);
+
+router.use("/api", apiRouter.routes(), apiRouter.allowedMethods());
+router.use("/demo", demoRouter.routes(), demoRouter.allowedMethods());
+app.use(router.routes(), router.allowedMethods());
+
+// static file serving
+app.use(async (ctx, next) => {
+  const root = `${Deno.cwd()}/public`;
+  try {
+    await ctx.send({
+      root,
+      index: "index.html",
+    });
+  } catch {
+    next();
+  }
+});
+
+// catch-all
+app.use((ctx) => {
+  ctx.response.status = Status.NotFound
+  ctx.response.body = `"${ctx.request.url}" not found`
+})
+
 
 await app.listen({ port: 8080 });

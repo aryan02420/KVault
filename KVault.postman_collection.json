@@ -20,12 +20,13 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/store",
+					"raw": "localhost:8080/api/store",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
+						"api",
 						"store"
 					]
 				}
@@ -39,7 +40,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"id\": \"6f00aa73-8729-4b00-a559-60bd568f8e83\"\n}",
+					"raw": "{\n    \"id\": \"6ef6903a-8cd9-463a-8969-11361f3c46cc\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -47,12 +48,13 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/view",
+					"raw": "localhost:8080/api/view",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
+						"api",
 						"view"
 					]
 				}
@@ -74,12 +76,13 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/stats",
+					"raw": "localhost:8080/api/stats",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
+						"api",
 						"stats"
 					]
 				}
