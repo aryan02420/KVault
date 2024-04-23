@@ -1,4 +1,4 @@
-import { Application, Context, helpers, Middleware, Router, Status } from "oak";
+import { Application, Context, helpers, Middleware, Router, Status, send } from "oak";
 import {
   deleteUserById,
   getAddressByUserId,
@@ -18,23 +18,30 @@ import {
 import { z, ZodSchema } from "zod";
 import { createTextSecret, stats } from "./controller.ts";
 
+const PUBLIC_ROOT = `${Deno.cwd()}/client/build`;
+const PORT = 8080;
+
 const { getQuery } = helpers;
 const apiRouter = new Router();
 const demoRouter = new Router();
 const router = new Router();
 
-const logErrors: Middleware = async (_, next) => {
+const logErrors: Middleware = async (ctx, next) => {
   try {
     await next();
   } catch (err) {
-    console.error(err);
+    ctx.response.status = Status.InternalServerError;
+    ctx.response.body = err.toString();
+    console.error("Error caught in middleware.", err);
   }
 };
 
 const json: Middleware = async (ctx, next) => {
   const body = ctx.request.body();
   if (body.type !== "json") {
-    ctx.throw(400, "Request body must be JSON");
+    ctx.response.status = Status.BadRequest;
+    ctx.response.body = "Request body must be JSON";
+    return;
   }
   const value = await body.value;
   ctx.state = value;
@@ -64,7 +71,9 @@ apiRouter
       const state = ctx.state;
       const output = await createTextSecret(state);
       if (!output.id) {
-        ctx.throw(Status.InternalServerError, "Error creating text secret.");
+        ctx.response.status = Status.InternalServerError;
+        ctx.response.body = "Error creating text secret.";
+        return;
       }
       ctx.response.body = output;
     },
@@ -76,7 +85,9 @@ apiRouter
       const state = ctx.state;
       const result = await readTextSecret(state);
       if (!result) {
-        ctx.throw(Status.NotFound, "Secret not found or already read.");
+        ctx.response.status = Status.NotFound;
+        ctx.response.body = "Secret not found or already read.";
+        return;
       }
       ctx.response.body = result;
     },
@@ -116,7 +127,7 @@ demoRouter
   .delete("/users/:id", async (ctx: Context) => {
     const { id } = getQuery(ctx, { mergeParams: true });
     await deleteUserById(id);
-  });
+  })
 
 const app = new Application();
 
@@ -127,23 +138,17 @@ router.use("/demo", demoRouter.routes(), demoRouter.allowedMethods());
 app.use(router.routes(), router.allowedMethods());
 
 // static file serving
-app.use(async (ctx, next) => {
-  const root = `${Deno.cwd()}/client/dist/`;
+app.use(async (ctx) => {
   try {
     await ctx.send({
-      root,
+      root: PUBLIC_ROOT,
       index: "index.html",
     });
   } catch {
-    next();
+    await send(ctx, `client/build/index.html`);
   }
 });
 
-// catch-all
-app.use((ctx) => {
-  ctx.response.status = Status.NotFound
-  ctx.response.body = `"${ctx.request.url}" not found`
-})
 
-
-await app.listen({ port: 8080 });
+console.info(`Starting server on http://localhost:${PORT}`);
+await app.listen({ port: PORT });
